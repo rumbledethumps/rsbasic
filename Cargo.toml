@@ -1,0 +1,18 @@
+[package]
+name = "rsbasic"
+version = "0.1.0"
+authors = ["Rumbledethumps"]
+readme = "README.md"
+repository = "https://github.com/rumbledethumps/rsbasic"
+description = "The BASIC programming language as it was in 1978."
+
+edition = "2018"
+
+[lib]
+name = "macros"
+proc-macro = true
+doc = false
+
+[[bin]]
+name = "basic"
+path = "src/main.rs"
