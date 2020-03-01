@@ -13,6 +13,7 @@ edition = "2018"
 name = "macros"
 proc-macro = true
 doc = false
+test = false
 
 [[bin]]
 name = "basic"
