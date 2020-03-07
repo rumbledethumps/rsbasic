@@ -1,4 +1,6 @@
 # BASIC
+[![](https://tokei.rs/b1/github/rumbledethumps/rsbasic?category=lines)](https://github.com/rumbledethumps/rsbasic)
+[![](https://tokei.rs/b1/github/rumbledethumps/rsbasic?category=comments)](https://github.com/rumbledethumps/rsbasic)
 
 The BASIC programming language as it was in 1978.\
 See <https://en.wikipedia.org/wiki/Microsoft_BASIC>
