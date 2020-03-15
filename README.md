@@ -1,11 +1,9 @@
-# BASIC
-[![](https://tokei.rs/b1/github/rumbledethumps/rsbasic?category=lines)](https://github.com/rumbledethumps/rsbasic)
-[![](https://tokei.rs/b1/github/rumbledethumps/rsbasic?category=comments)](https://github.com/rumbledethumps/rsbasic)
+# RS-BASIC
 
-The BASIC programming language as it was in 1978.\
-See <https://en.wikipedia.org/wiki/Microsoft_BASIC>
+The BASIC programming language as it was on 8-bit CPUs.
 
 ```
+RS-BASIC
 READY.
 10 FOR I=1 TO 2
 20 PRINT "Hello World"
@@ -16,8 +14,8 @@ Hello World
 READY.
 ```
 
-Future versions of BASIC introduced structure and required
-or included a text editor. This project is a historical
+Future versions of BASIC used more structure and less
+lines numbers and GOTOs. This project is a historical
 preservation of BASIC just before then. A time when most
 people were learning about computers by typing in BASIC
 programs published in books and magazines.
