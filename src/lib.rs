@@ -1,4 +1,4 @@
-//! # BASIC
+//! # RS-BASIC
 //!
 //! The BASIC programming language as it was in 1978.
 //!
