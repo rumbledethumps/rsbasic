@@ -1,6 +1,11 @@
 //! # RS-BASIC
 //!
 //! The BASIC programming language as it was in the 8-bit era.
+//! ```text
+//! RS-BASIC
+//! READY.
+//! █
+//! ```
 //!
 //! Binaries for Windows and MacOS are available
 //! [on GitHub.](https://github.com/rumbledethumps/rsbasic/releases)
@@ -8,18 +13,9 @@
 //! Linux requires [Rust](https://www.rust-lang.org/tools/install) then
 //! the command `cargo install rsbasic`.
 //!
-//! Begin by opening a terminal and running the executable. Double clicking
-//! the executable from a GUI desktop often works as well. If you get the
-//! following, you have achieved success.
-//! ```text
-//! RS-BASIC
-//! READY.
-//! █
-//! ```
+//! [The wiki](https://github.com/rumbledethumps/rsbasic/wiki) contains links and
+//! information about programs (mostly games) that you can run on RS-BASIC.
 //!
-//! A collection of BASIC games compatible with RS-BASIC is available
-//! from [Vintage BASIC](http://vintage-basic.net/games.html).
-//! These can be loaded with `LOAD "filename.bas"` then run with `RUN`.
 
 #[path = "doc/introduction.rs"]
 #[allow(non_snake_case)]
