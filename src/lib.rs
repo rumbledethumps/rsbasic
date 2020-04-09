@@ -7,14 +7,22 @@
 //! █
 //! ```
 //!
+//! ## Installation
+//!
 //! Binaries for Windows and MacOS are available
 //! [on GitHub.](https://github.com/rumbledethumps/rsbasic/releases)
 //!
 //! Linux requires [Rust](https://www.rust-lang.org/tools/install) then
 //! the command `cargo install rsbasic`.
 //!
-//! [The wiki](https://github.com/rumbledethumps/rsbasic/wiki) contains links and
-//! information about programs (mostly games) that you can run on RS-BASIC.
+//! ## Getting Started
+//!
+//! [The patch repository](https://github.com/rumbledethumps/rsbasic/tree/master/patch)
+//! contains many programs that can be automatically downloaded and patched.
+//!
+//! This is the manual. Every type, statement, operation, and function is documented.
+//! RS-BASIC is designed to capture and preserve the best parts of the BASIC experience.
+//! Getting a programming manual with your computer was definitely best.
 //!
 
 #[path = "doc/introduction.rs"]
