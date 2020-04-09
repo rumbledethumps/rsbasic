@@ -7,7 +7,7 @@ license = "Apache-2.0 OR MIT"
 repository = "https://github.com/rumbledethumps/rsbasic"
 description = "The BASIC programming language as it was in the 8-bit era."
 readme = "README.md"
-exclude = ["games"]
+exclude = ["patch"]
 
 [profile.release]
 panic = "abort"
