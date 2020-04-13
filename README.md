@@ -1,10 +1,7 @@
-# RS-BASIC
-
-The BASIC programming language as it was in the 8-bit era.
+The BASIC programming language as it was in the beginning.
 ```
 RS-BASIC
 READY.
 █
 ```
 
-Start here: <https://docs.rs/rsbasic>
