@@ -1,28 +1,12 @@
 //! # RS-BASIC
-//!
-//! The BASIC programming language as it was in the 8-bit era.
 //! ```text
-//! RS-BASIC
 //! READY.
 //! █
 //! ```
 //!
-//! ## Installation
-//!
-//! Binaries for Windows and MacOS are available
-//! [on GitHub.](https://github.com/rumbledethumps/rsbasic/releases)
-//!
-//! Linux requires [Rust](https://www.rust-lang.org/tools/install) then
-//! the command `cargo install rsbasic`.
-//!
-//! ## Getting Started
-//!
-//! [The patch repository](https://github.com/rumbledethumps/rsbasic/tree/master/patch)
-//! contains many programs that can be automatically downloaded and patched.
-//!
-//! This is the manual. Every type, statement, operation, and function is documented.
-//! RS-BASIC is designed to capture and preserve the best parts of the BASIC experience.
-//! Getting a programming manual with your computer was definitely best.
+//! RS-BASIC is compatible with programs from the beginning of personal computing.
+//! It is designed to capture and preserve the best parts of the BASIC experience.
+//! Getting a programming manual with your new computer hardware is best.
 //!
 
 #[path = "doc/introduction.rs"]
