@@ -1,7 +1,7 @@
 [package]
 edition = "2018"
 name = "rsbasic"
-version = "0.7.0"
+version = "0.7.1"
 authors = ["Rumbledethumps"]
 license = "Apache-2.0 OR MIT"
 repository = "https://github.com/rumbledethumps/rsbasic"
@@ -11,9 +11,7 @@ exclude = ["patch"]
 
 [profile.release]
 panic = "abort"
-opt-level = 'z'
 lto = true
-codegen-units = 1
 
 [dependencies]
 ansi_term = "0.12"
