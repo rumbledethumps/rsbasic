@@ -5,7 +5,7 @@ version = "0.7.1"
 authors = ["Rumbledethumps"]
 license = "Apache-2.0 OR MIT"
 repository = "https://github.com/rumbledethumps/rsbasic"
-description = "The BASIC programming language as it was in the 8-bit era."
+description = "Rumbledethumps' Stack BASIC"
 readme = "README.md"
 exclude = ["patch"]
 

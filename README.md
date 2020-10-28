@@ -1,4 +1,4 @@
-The BASIC programming language as it was in the beginning.
+Rumbledethumps' Stack BASIC
 ```
 RS-BASIC
 READY.
