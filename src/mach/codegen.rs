@@ -13,47 +13,47 @@ pub fn codegen(program: &mut Program, ast: &[ast::Statement]) {
 
 struct Visitor<'a> {
     link: &'a mut Program,
-    gen: Generator,
+    r#gen: Generator,
 }
 
 impl<'a> Visitor<'a> {
     fn accept(program: &mut Program, ast: &[ast::Statement]) {
         let mut this = Visitor {
             link: program,
-            gen: Generator::new(),
+            r#gen: Generator::new(),
         };
         for statement in ast {
             statement.accept(&mut this);
         }
-        for (_col, frag) in this.gen.stmt.drain(..) {
+        for (_col, frag) in this.r#gen.stmt.drain(..) {
             if let Some(error) = this.link.append(frag).err() {
                 this.link.error(error);
                 break;
             }
         }
-        debug_assert_eq!(0, this.gen.var.len());
-        debug_assert_eq!(0, this.gen.expr.len());
-        debug_assert_eq!(0, this.gen.stmt.len());
+        debug_assert_eq!(0, this.r#gen.var.len());
+        debug_assert_eq!(0, this.r#gen.expr.len());
+        debug_assert_eq!(0, this.r#gen.stmt.len());
     }
 }
 
 impl<'a> ast::Visitor for Visitor<'a> {
     fn visit_statement(&mut self, statement: &ast::Statement) {
         let mut link = Link::default();
-        let col = match self.gen.statement(&mut link, statement) {
+        let col = match self.r#gen.statement(&mut link, statement) {
             Ok(col) => col,
             Err(e) => {
                 self.link.error(e);
                 0..0
             }
         };
-        if let Some(error) = self.gen.stmt.push((col.clone(), link)).err() {
+        if let Some(error) = self.r#gen.stmt.push((col.clone(), link)).err() {
             self.link.error(error.in_column(&col))
         }
     }
     fn visit_variable(&mut self, var: &ast::Variable) {
         let mut link = Link::default();
-        let (col, name, len) = match self.gen.variable(&mut link, var) {
+        let (col, name, len) = match self.r#gen.variable(&mut link, var) {
             Ok((col, name, len)) => (col, name, len),
             Err(e) => {
                 self.link.error(e);
@@ -61,20 +61,20 @@ impl<'a> ast::Visitor for Visitor<'a> {
             }
         };
         let var_item = VarItem::new(col.clone(), name, link, len);
-        if let Some(error) = self.gen.var.push(var_item).err() {
+        if let Some(error) = self.r#gen.var.push(var_item).err() {
             self.link.error(error.in_column(&col))
         }
     }
     fn visit_expression(&mut self, expression: &ast::Expression) {
         let mut link = Link::default();
-        let col = match self.gen.expression(&mut link, expression) {
+        let col = match self.r#gen.expression(&mut link, expression) {
             Ok(col) => col,
             Err(e) => {
                 self.link.error(e);
                 0..0
             }
         };
-        if let Some(error) = self.gen.expr.push((col.clone(), link)).err() {
+        if let Some(error) = self.r#gen.expr.push((col.clone(), link)).err() {
             self.link.error(error.in_column(&col))
         }
     }
@@ -109,13 +109,13 @@ impl VarItem {
 
     fn push_as_dim(self, link: &mut Link) -> Result<Column> {
         self.test_for_built_in(true)?;
-        if let Some(len) = self.arg_len {
-            if len > 0 {
-                link.append(self.link)?;
-                link.push(Opcode::Literal(Val::try_from(len)?))?;
-                link.push(Opcode::DimArr(self.name))?;
-                return Ok(self.col);
-            }
+        if let Some(len) = self.arg_len
+            && len > 0
+        {
+            link.append(self.link)?;
+            link.push(Opcode::Literal(Val::try_from(len)?))?;
+            link.push(Opcode::DimArr(self.name))?;
+            return Ok(self.col);
         }
         Err(error!(SyntaxError, ..&self.col; "NOT AN ARRAY"))
     }
@@ -606,15 +606,14 @@ impl Generator {
         let (_col_step, step) = self.expr_pop_line_number()?;
         let (_col_old_start, old_start) = self.expr_pop_line_number()?;
         let (_col_new_start, new_start) = self.expr_pop_line_number()?;
-        if let Some(new_start) = new_start {
-            if let Some(old_start) = old_start {
-                if let Some(step) = step {
-                    link.push(Opcode::Literal(Val::Single(new_start as f32)))?;
-                    link.push(Opcode::Literal(Val::Single(old_start as f32)))?;
-                    link.push(Opcode::Literal(Val::Single(step as f32)))?;
-                    link.push(Opcode::Renum)?;
-                }
-            }
+        if let Some(new_start) = new_start
+            && let Some(old_start) = old_start
+            && let Some(step) = step
+        {
+            link.push(Opcode::Literal(Val::Single(new_start as f32)))?;
+            link.push(Opcode::Literal(Val::Single(old_start as f32)))?;
+            link.push(Opcode::Literal(Val::Single(step as f32)))?;
+            link.push(Opcode::Renum)?;
         }
         Ok(col.clone())
     }

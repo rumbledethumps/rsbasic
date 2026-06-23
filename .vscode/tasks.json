@@ -1,0 +1,38 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "cargo build (basic)",
+            "type": "shell",
+            "command": "cargo build --bin basic",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": [],
+            // Pin cargo onto the build shell's PATH (no-op where it's already there).
+            // Needed under VS Code on WSL, where the server's PATH lacks ~/.cargo/bin.
+            "linux": {
+                "options": {
+                    "env": {
+                        "PATH": "${userHome}/.cargo/bin:${env:PATH}"
+                    }
+                }
+            },
+            "osx": {
+                "options": {
+                    "env": {
+                        "PATH": "${userHome}/.cargo/bin:${env:PATH}"
+                    }
+                }
+            },
+            "windows": {
+                "options": {
+                    "env": {
+                        "PATH": "${userHome}\\.cargo\\bin;${env:PATH}"
+                    }
+                }
+            }
+        }
+    ]
+}

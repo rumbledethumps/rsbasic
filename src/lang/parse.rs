@@ -1,5 +1,5 @@
 use super::token::{self, Literal, Operator, Token, Word};
-use super::{ast::*, Column, Error, LineNumber, MaxValue};
+use super::{Column, Error, LineNumber, MaxValue, ast::*};
 use crate::error;
 use std::collections::HashMap;
 
@@ -233,10 +233,10 @@ impl<'a> BasicParser<'a> {
             _ => None,
         } {
             self.next();
-            if let Ok(num) = str.parse::<u16>() {
-                if num <= LineNumber::max_value() {
-                    return Ok(Some(num));
-                }
+            if let Ok(num) = str.parse::<u16>()
+                && num <= LineNumber::MAX
+            {
+                return Ok(Some(num));
             }
             return Err(error!(UndefinedLine, ..&self.col; "INVALID LINE NUMBER"));
         }
@@ -279,7 +279,7 @@ impl<'a> BasicParser<'a> {
             from = Expression::Single(self.col.clone(), from_num);
         } else {
             from_num = 0.0;
-            to_num = LineNumber::max_value() as f32;
+            to_num = LineNumber::MAX as f32;
             from = Expression::Single(self.col.start..self.col.start, from_num);
         };
         if self.maybe(Token::Operator(Operator::Minus)) {
@@ -287,7 +287,7 @@ impl<'a> BasicParser<'a> {
                 to_num = ln as f32;
                 to = Expression::Single(self.col.clone(), to_num);
             } else {
-                to_num = LineNumber::max_value() as f32;
+                to_num = LineNumber::MAX as f32;
                 to = Expression::Single(self.col.start..self.col.start, to_num);
             }
         } else {
@@ -323,20 +323,20 @@ impl<'a> BasicParser<'a> {
     }
 
     fn maybe(&mut self, token: Token) -> bool {
-        if let Some(t) = self.peek() {
-            if **t == token {
-                self.next();
-                return true;
-            }
+        if let Some(t) = self.peek()
+            && **t == token
+        {
+            self.next();
+            return true;
         }
         false
     }
 
     fn expect(&mut self, token: Token) -> Result<()> {
-        if let Some(t) = self.next() {
-            if *t == token {
-                return Ok(());
-            }
+        if let Some(t) = self.next()
+            && *t == token
+        {
+            return Ok(());
         }
         Err(error!(SyntaxError, ..&self.col;
             match token {
@@ -787,23 +787,23 @@ impl Statement {
 
     fn r#let(parse: &mut BasicParser, is_shortcut: bool) -> Result<Statement> {
         let column = parse.col.clone();
-        if let Some(Token::Ident(token::Ident::String(s))) = parse.peek() {
-            if s == "MID$" {
-                parse.next();
-                parse.expect(Token::LParen)?;
-                let var = parse.expect_var()?;
-                parse.expect(Token::Comma)?;
-                let pos = parse.expect_expression()?;
-                let len = if parse.maybe(Token::Comma) {
-                    parse.expect_expression()?
-                } else {
-                    Expression::Integer(parse.col.start..parse.col.start, i16::max_value())
-                };
-                parse.expect(Token::RParen)?;
-                parse.expect(Token::Operator(Operator::Equal))?;
-                let expr = parse.expect_expression()?;
-                return Ok(Statement::Mid(column, var, pos, len, expr));
-            }
+        if let Some(Token::Ident(token::Ident::String(s))) = parse.peek()
+            && s == "MID$"
+        {
+            parse.next();
+            parse.expect(Token::LParen)?;
+            let var = parse.expect_var()?;
+            parse.expect(Token::Comma)?;
+            let pos = parse.expect_expression()?;
+            let len = if parse.maybe(Token::Comma) {
+                parse.expect_expression()?
+            } else {
+                Expression::Integer(parse.col.start..parse.col.start, i16::MAX)
+            };
+            parse.expect(Token::RParen)?;
+            parse.expect(Token::Operator(Operator::Equal))?;
+            let expr = parse.expect_expression()?;
+            return Ok(Statement::Mid(column, var, pos, len, expr));
         }
         let var = parse.expect_var()?;
         match parse.next() {

@@ -64,7 +64,7 @@ impl TryFrom<Val> for LineNumber {
     type Error = Error;
     fn try_from(val: Val) -> std::result::Result<Self, Self::Error> {
         let num = u16::try_from(val)?;
-        if num <= LineNumber::max_value() {
+        if num <= LineNumber::MAX {
             Ok(Some(num))
         } else {
             Err(error!(UndefinedLine))
@@ -85,7 +85,7 @@ impl TryFrom<Val> for u16 {
             }
             Val::Single(num) => {
                 let num = num.floor();
-                if num >= 0.0 && num <= u16::max_value() as f32 {
+                if num >= 0.0 && num <= u16::MAX as f32 {
                     Ok(num as u16)
                 } else {
                     Err(error!(Overflow))
@@ -93,7 +93,7 @@ impl TryFrom<Val> for u16 {
             }
             Val::Double(num) => {
                 let num = num.floor();
-                if num >= 0.0 && num <= u16::max_value() as f64 {
+                if num >= 0.0 && num <= u16::MAX as f64 {
                     Ok(num as u16)
                 } else {
                     Err(error!(Overflow))
@@ -111,7 +111,7 @@ impl TryFrom<Val> for i16 {
             Val::Integer(num) => Ok(num),
             Val::Single(num) => {
                 let num = num.floor();
-                if num >= i16::min_value() as f32 && num <= i16::max_value() as f32 {
+                if num >= i16::MIN as f32 && num <= i16::MAX as f32 {
                     Ok(num as i16)
                 } else {
                     Err(error!(Overflow))
@@ -119,7 +119,7 @@ impl TryFrom<Val> for i16 {
             }
             Val::Double(num) => {
                 let num = num.floor();
-                if num >= i16::min_value() as f64 && num <= i16::max_value() as f64 {
+                if num >= i16::MIN as f64 && num <= i16::MAX as f64 {
                     Ok(num as i16)
                 } else {
                     Err(error!(Overflow))
@@ -143,7 +143,7 @@ impl TryFrom<Val> for u32 {
             }
             Val::Single(num) => {
                 let num = num.floor();
-                if num >= 0.0 && num <= u32::max_value() as f32 {
+                if num >= 0.0 && num <= u32::MAX as f32 {
                     Ok(num as u32)
                 } else {
                     Err(error!(Overflow))
@@ -151,7 +151,7 @@ impl TryFrom<Val> for u32 {
             }
             Val::Double(num) => {
                 let num = num.floor();
-                if num >= 0.0 && num <= u32::max_value() as f64 {
+                if num >= 0.0 && num <= u32::MAX as f64 {
                     Ok(num as u32)
                 } else {
                     Err(error!(Overflow))
@@ -175,7 +175,7 @@ impl TryFrom<Val> for usize {
             }
             Val::Single(num) => {
                 let num = num.floor();
-                if num >= 0.0 && num <= usize::max_value() as f32 {
+                if num >= 0.0 && num <= usize::MAX as f32 {
                     Ok(num as usize)
                 } else {
                     Err(error!(Overflow))
@@ -183,7 +183,7 @@ impl TryFrom<Val> for usize {
             }
             Val::Double(num) => {
                 let num = num.floor();
-                if num >= 0.0 && num <= usize::max_value() as f64 {
+                if num >= 0.0 && num <= usize::MAX as f64 {
                     Ok(num as usize)
                 } else {
                     Err(error!(Overflow))

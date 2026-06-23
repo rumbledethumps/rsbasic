@@ -19,13 +19,11 @@ it is recommended to use tokens() and ast() from Line instead.
 
 pub type Column = std::ops::Range<usize>;
 pub type LineNumber = Option<u16>;
-pub trait MaxValue<T> {
-    fn max_value() -> T;
+pub trait MaxValue {
+    const MAX: u16;
 }
-impl MaxValue<u16> for LineNumber {
-    fn max_value() -> u16 {
-        65529
-    }
+impl MaxValue for LineNumber {
+    const MAX: u16 = 65529;
 }
 
 mod error;

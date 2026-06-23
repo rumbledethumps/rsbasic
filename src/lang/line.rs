@@ -1,4 +1,4 @@
-use super::{ast::*, lex, parse, token, Column, Error, LineNumber, MaxValue};
+use super::{Column, Error, LineNumber, MaxValue, ast::*, lex, parse, token};
 use std::collections::HashMap;
 
 #[derive(Debug)]
@@ -41,7 +41,7 @@ impl Line {
                 return Line {
                     number: self.number,
                     tokens: self.tokens.clone(),
-                }
+                };
             }
         };
         let mut visitor = RenumVisitor::new(changes);
@@ -70,7 +70,7 @@ struct RenumVisitor<'a> {
 }
 
 impl<'a> RenumVisitor<'a> {
-    fn new(changes: &HashMap<u16, u16>) -> RenumVisitor {
+    fn new(changes: &HashMap<u16, u16>) -> RenumVisitor<'_> {
         RenumVisitor {
             changes,
             replace: vec![],
@@ -84,7 +84,7 @@ impl<'a> RenumVisitor<'a> {
             Integer(col, n) => (col, *n as f64),
             _ => return,
         };
-        if n > LineNumber::max_value() as f64 {
+        if n > LineNumber::MAX as f64 {
             return;
         }
         let n = n as u16;

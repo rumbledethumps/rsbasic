@@ -56,29 +56,29 @@ impl Var {
     fn def(&mut self, var_type: VarType, from: Val, to: Val) -> Result<()> {
         let from = Rc::<str>::try_from(from)?;
         let to = Rc::<str>::try_from(to)?;
-        if let Some(from) = from.chars().next() {
-            if let Some(to) = to.chars().next() {
-                for idx in (from as usize - 'A' as usize)..=(to as usize - 'A' as usize) {
-                    self.types[idx] = var_type.clone();
-                }
-                self.vars.retain(|k, v| {
-                    if !k.chars().last().unwrap_or('-').is_ascii_alphabetic() {
-                        true
-                    } else {
-                        match v {
-                            Val::Integer(_) => var_type == VarType::Integer,
-                            Val::Single(_) => var_type == VarType::Single,
-                            Val::Double(_) => var_type == VarType::Double,
-                            Val::String(_) => var_type == VarType::String,
-                            Val::Next(_) | Val::Return(_) => {
-                                debug_assert!(false);
-                                true
-                            }
+        if let Some(from) = from.chars().next()
+            && let Some(to) = to.chars().next()
+        {
+            for idx in (from as usize - 'A' as usize)..=(to as usize - 'A' as usize) {
+                self.types[idx] = var_type.clone();
+            }
+            self.vars.retain(|k, v| {
+                if !k.chars().last().unwrap_or('-').is_ascii_alphabetic() {
+                    true
+                } else {
+                    match v {
+                        Val::Integer(_) => var_type == VarType::Integer,
+                        Val::Single(_) => var_type == VarType::Single,
+                        Val::Double(_) => var_type == VarType::Double,
+                        Val::String(_) => var_type == VarType::String,
+                        Val::Next(_) | Val::Return(_) => {
+                            debug_assert!(false);
+                            true
                         }
                     }
-                });
-                return Ok(());
-            }
+                }
+            });
+            return Ok(());
         }
         Err(error!(IllegalFunctionCall))
     }
@@ -187,7 +187,7 @@ impl Var {
     }
 
     pub fn store(&mut self, var_name: &Rc<str>, value: Val) -> Result<()> {
-        if self.vars.len() > u16::max_value() as usize {
+        if self.vars.len() > u16::MAX as usize {
             return Err(error!(OutOfMemory));
         }
         if var_name.ends_with('!') {

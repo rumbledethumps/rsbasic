@@ -1,4 +1,4 @@
-use super::{codegen::codegen, Address, Link, Opcode, Symbol, Val};
+use super::{Address, Link, Opcode, Symbol, Val, codegen::codegen};
 use crate::lang::{Error, Line, LineNumber};
 use std::sync::Arc;
 
@@ -79,10 +79,10 @@ impl Program {
                 }
             };
             codegen(self, &ast);
-            if self.line_number.is_none() {
-                if let Err(e) = self.link.push(Opcode::End) {
-                    Arc::make_mut(&mut self.errors).push(e);
-                }
+            if self.line_number.is_none()
+                && let Err(e) = self.link.push(Opcode::End)
+            {
+                Arc::make_mut(&mut self.errors).push(e);
             }
         }
     }

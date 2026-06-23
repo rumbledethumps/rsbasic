@@ -83,11 +83,11 @@ impl Link {
             }
         } else if self.ops.len() == 2 {
             let mut expr_link = self.ops.drain(..);
-            if let Some(Opcode::Literal(val)) = expr_link.next() {
-                if let Some(Opcode::Neg) = expr_link.next() {
-                    self.data.push(Operation::negate(val)?)?;
-                    return Ok(());
-                }
+            if let Some(Opcode::Literal(val)) = expr_link.next()
+                && let Some(Opcode::Neg) = expr_link.next()
+            {
+                self.data.push(Operation::negate(val)?)?;
+                return Ok(());
             }
         }
         Err(error!(SyntaxError, ..col; "EXPECTED LITERAL"))
@@ -256,16 +256,14 @@ impl Link {
 
     pub fn set_start_of_direct(&mut self, op_addr: Address) {
         self.direct_set = true;
-        self.symbols.insert(
-            LineNumber::max_value() as Symbol + 1,
-            (op_addr, self.data.len()),
-        );
+        self.symbols
+            .insert(LineNumber::MAX as Symbol + 1, (op_addr, self.data.len()));
     }
 
     pub fn line_number_for(&self, op_addr: Address) -> LineNumber {
         for (line_number, (symbol_addr, _)) in self.symbols.range(0..).rev() {
             if op_addr >= *symbol_addr {
-                if *line_number <= LineNumber::max_value() as isize {
+                if *line_number <= LineNumber::MAX as isize {
                     return Some(*line_number as u16);
                 } else {
                     return None;
@@ -309,8 +307,8 @@ impl Link {
                     }
                 }
                 Some((op_dest, data_dest)) => {
-                    if let Some(op) = self.ops.get_mut(op_addr) {
-                        if let Some(new_op) = match op {
+                    if let Some(op) = self.ops.get_mut(op_addr)
+                        && let Some(new_op) = match op {
                             Opcode::IfNot(_) => Some(Opcode::IfNot(*op_dest)),
                             Opcode::Jump(_) => Some(Opcode::Jump(*op_dest)),
                             Opcode::Literal(Val::Return(_)) => {
@@ -321,10 +319,10 @@ impl Link {
                             }
                             Opcode::Restore(_) => Some(Opcode::Restore(*data_dest)),
                             _ => None,
-                        } {
-                            *op = new_op;
-                            continue;
                         }
+                    {
+                        *op = new_op;
+                        continue;
                     }
                 }
             }
@@ -341,10 +339,10 @@ impl TryFrom<&Link> for LineNumber {
     type Error = Error;
 
     fn try_from(prog: &Link) -> std::result::Result<Self, Self::Error> {
-        if prog.ops.len() == 1 {
-            if let Some(Opcode::Literal(val)) = prog.ops.last() {
-                return LineNumber::try_from(val.clone());
-            }
+        if prog.ops.len() == 1
+            && let Some(Opcode::Literal(val)) = prog.ops.last()
+        {
+            return LineNumber::try_from(val.clone());
         }
         Err(error!(UndefinedLine; "INVALID LINE NUMBER"))
     }
@@ -354,10 +352,10 @@ impl TryFrom<&Link> for Rc<str> {
     type Error = Error;
 
     fn try_from(prog: &Link) -> std::result::Result<Self, Self::Error> {
-        if prog.ops.len() == 1 {
-            if let Some(Opcode::Literal(Val::String(s))) = prog.ops.last() {
-                return Ok(s.clone());
-            }
+        if prog.ops.len() == 1
+            && let Some(Opcode::Literal(Val::String(s))) = prog.ops.last()
+        {
+            return Ok(s.clone());
         }
         Err(error!(SyntaxError; "EXPECTED STRING LITERAL"))
     }

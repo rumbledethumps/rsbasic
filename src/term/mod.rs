@@ -13,8 +13,8 @@ use linefeed::{
 };
 use std::fs;
 use std::io::{BufRead, BufReader, ErrorKind, Write};
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 pub fn main() {
     if std::env::args().count() > 2 {
@@ -225,14 +225,14 @@ impl<Term: Terminal> Completer<Term> for LineCompleter {
         _start: usize,
         _end: usize,
     ) -> Option<Vec<Completion>> {
-        if let Ok(num) = prompter.buffer().parse::<usize>() {
-            if let Some((s, _)) = self.runtime.line(num) {
-                let mut comp_list = Vec::new();
-                let mut comp = Completion::simple(s);
-                comp.suffix = linefeed::complete::Suffix::None;
-                comp_list.push(comp);
-                return Some(comp_list);
-            }
+        if let Ok(num) = prompter.buffer().parse::<usize>()
+            && let Some((s, _)) = self.runtime.line(num)
+        {
+            let mut comp_list = Vec::new();
+            let mut comp = Completion::simple(s);
+            comp.suffix = linefeed::complete::Suffix::None;
+            comp_list.push(comp);
+            return Some(comp_list);
         }
         None
     }
@@ -318,7 +318,8 @@ fn load(filename: &str, allow_patch: bool, ignore_errors: bool) -> Result<Listin
     {
         let filename = if let Some(filename) = filename.strip_prefix("//") {
             let mut url =
-                "https://raw.githubusercontent.com/rumbledethumps/rsbasic/master/patch/".to_string();
+                "https://raw.githubusercontent.com/rumbledethumps/rsbasic/master/patch/"
+                    .to_string();
             url.push_str(filename);
             url
         } else {
@@ -417,10 +418,10 @@ fn load2(
                     }
                     continue;
                 }
-                if let Err(error) = listing.load_str(&line) {
-                    if !ignore_errors {
-                        return Err(error.message(&format!("In line {} of the file.", index + 1)));
-                    }
+                if let Err(error) = listing.load_str(&line)
+                    && !ignore_errors
+                {
+                    return Err(error.message(&format!("In line {} of the file.", index + 1)));
                 }
             }
         }

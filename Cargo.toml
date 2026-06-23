@@ -1,5 +1,5 @@
 [package]
-edition = "2021"
+edition = "2024"
 name = "rsbasic"
 version = "0.7.1"
 authors = ["Rumbledethumps"]

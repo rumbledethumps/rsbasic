@@ -25,7 +25,7 @@ impl<T> Stack<T> {
         }
     }
     fn max_len(&self) -> usize {
-        u16::max_value() as usize
+        u16::MAX as usize
     }
     fn overflow_check(&self) -> Result<()> {
         if self.vec.len() > self.max_len() {

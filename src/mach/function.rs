@@ -64,7 +64,7 @@ impl Function {
         match string.chars().next() {
             Some(ch) => {
                 let num = u32::from(ch);
-                if num <= i16::max_value() as u32 {
+                if num <= i16::MAX as u32 {
                     Ok(Val::Integer(num as i16))
                 } else if num <= 16_777_216 {
                     Ok(Val::Single(num as f32))
@@ -387,10 +387,8 @@ impl Function {
         let len = if tab < 0 {
             let tab = -tab as usize;
             tab - (print_col % tab)
-        } else if tab as usize > print_col {
-            tab as usize - print_col
         } else {
-            0
+            (tab as usize).saturating_sub(print_col)
         };
         Ok(Val::String(" ".repeat(len).into()))
     }

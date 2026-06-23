@@ -1,0 +1,27 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            // macOS / Linux — CodeLLDB (vadimcn.vscode-lldb)
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug 'basic' (LLDB – macOS/Linux)",
+            "preLaunchTask": "cargo build (basic)",
+            "program": "${workspaceFolder}/target/debug/basic",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "terminal": "integrated"
+        },
+        {
+            // Windows (MSVC) — Microsoft C/C++ (ms-vscode.cpptools)
+            "type": "cppvsdbg",
+            "request": "launch",
+            "name": "Debug 'basic' (Windows MSVC)",
+            "preLaunchTask": "cargo build (basic)",
+            "program": "${workspaceFolder}/target/debug/basic.exe",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal"
+        }
+    ]
+}

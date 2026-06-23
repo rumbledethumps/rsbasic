@@ -1,7 +1,7 @@
 use super::MAX_LINE_LEN;
 use crate::error;
 use crate::lang::{Column, Error, Line, LineNumber, MaxValue};
-use std::collections::{btree_map::Values, BTreeMap, HashMap};
+use std::collections::{BTreeMap, HashMap, btree_map::Values};
 use std::ops::{Range, RangeInclusive};
 use std::sync::Arc;
 
@@ -50,7 +50,7 @@ impl Listing {
     }
 
     pub fn line(&self, num: usize) -> Option<(String, Vec<Range<usize>>)> {
-        if num > LineNumber::max_value() as usize {
+        if num > LineNumber::MAX as usize {
             return None;
         }
         let mut range = Some(num as u16)..=Some(num as u16);
@@ -93,7 +93,7 @@ impl Listing {
                     *range = Some(num + 1)..=*range.end();
                 }
             } else {
-                *range = Some(LineNumber::max_value() + 1)..=Some(LineNumber::max_value() + 1);
+                *range = Some(LineNumber::MAX + 1)..=Some(LineNumber::MAX + 1);
             }
             let columns: Vec<Column> = self
                 .indirect_errors
@@ -113,7 +113,7 @@ impl Listing {
 
     pub fn renum(&mut self, new_start: u16, old_start: u16, step: u16) -> Result<(), Error> {
         let mut changes: HashMap<u16, u16> = HashMap::default();
-        let mut old_end: u16 = LineNumber::max_value() + 1;
+        let mut old_end: u16 = LineNumber::MAX + 1;
         let mut new_num = new_start;
         for (&ln, _) in self.source.iter() {
             let ln = match ln {
@@ -121,10 +121,10 @@ impl Listing {
                 None => return Err(error!(InternalError)),
             };
             if ln >= old_start {
-                if old_end <= LineNumber::max_value() && old_end >= new_start {
+                if old_end <= LineNumber::MAX && old_end >= new_start {
                     return Err(error!(IllegalFunctionCall));
                 }
-                if new_num > LineNumber::max_value() {
+                if new_num > LineNumber::MAX {
                     return Err(error!(Overflow));
                 }
                 changes.insert(ln, new_num);

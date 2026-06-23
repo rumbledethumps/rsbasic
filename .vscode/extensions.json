@@ -1,0 +1,9 @@
+{
+    // ms-vscode.cpptools for Windows
+    // vadimcn.vscode-lldb for macOS/Linux
+    "recommendations": [
+        "rust-lang.rust-analyzer",
+        "vadimcn.vscode-lldb",
+        "ms-vscode.cpptools"
+    ]
+}

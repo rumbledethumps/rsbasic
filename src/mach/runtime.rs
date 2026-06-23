@@ -14,7 +14,6 @@ const INTRO: &str = "RS-BASIC";
 const PROMPT: &str = "READY.";
 
 /// ## Virtual machine
-
 pub struct Runtime {
     prompt: String,
     listing: Listing,
@@ -321,12 +320,11 @@ impl Runtime {
         debug_assert!(matches!(self.state, State::Running | State::InputRunning));
         match self.execute_loop(iterations) {
             Ok(event) => {
-                if let State::Stopped = self.state {
-                    if let Event::Stopped = event {
-                        if let Some(event) = self.ready_prompt() {
-                            return event;
-                        }
-                    }
+                if let State::Stopped = self.state
+                    && let Event::Stopped = event
+                    && let Some(event) = self.ready_prompt()
+                {
+                    return event;
                 }
                 event
             }
@@ -414,7 +412,7 @@ impl Runtime {
                 Opcode::IfNot(addr) => {
                     if match self.stack.pop()? {
                         Val::Return(_) | Val::String(_) | Val::Next(_) => {
-                            return Err(error!(TypeMismatch))
+                            return Err(error!(TypeMismatch));
                         }
                         Val::Integer(n) => n == 0,
                         Val::Single(n) => n == 0.0,
@@ -616,7 +614,7 @@ impl Runtime {
         let (from, to) = self.stack.pop_2()?;
         let from = LineNumber::try_from(from)?;
         let to = LineNumber::try_from(to)?;
-        if from == Some(0) && to == Some(LineNumber::max_value()) {
+        if from == Some(0) && to == Some(LineNumber::MAX) {
             return Err(error!(IllegalFunctionCall));
         }
         if self.listing.remove_range(from..=to) {

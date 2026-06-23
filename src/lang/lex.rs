@@ -1,4 +1,4 @@
-use super::{token::*, LineNumber, MaxValue};
+use super::{LineNumber, MaxValue, token::*};
 use std::collections::VecDeque;
 
 pub fn lex(source_line: &str) -> (LineNumber, Vec<Token>) {
@@ -81,14 +81,14 @@ impl BasicLexer {
                 break;
             }
         }
-        if let Ok(num) = source_line[0..line_str_pos].trim_start().parse::<u16>() {
-            if num <= LineNumber::max_value() {
-                line_number = Some(num);
-                if let Some(' ') = source_line[line_str_pos..].chars().next() {
-                    line_str_pos += 1;
-                }
-                source_line = &source_line[line_str_pos..];
+        if let Ok(num) = source_line[0..line_str_pos].trim_start().parse::<u16>()
+            && num <= LineNumber::MAX
+        {
+            line_number = Some(num);
+            if let Some(' ') = source_line[line_str_pos..].chars().next() {
+                line_str_pos += 1;
             }
+            source_line = &source_line[line_str_pos..];
         }
         let mut tokens = BasicLexer {
             chars: source_line.chars().collect(),
@@ -106,48 +106,47 @@ impl BasicLexer {
     fn collapse_triples(tokens: &mut Vec<Token>) {
         let mut locs: Vec<(usize, Token)> = vec![];
         for (index, ttt) in tokens.windows(3).enumerate() {
-            if let Token::Operator(Operator::Less) = &ttt[0] {
-                if let Token::Whitespace(_) = &ttt[1] {
-                    if let Token::Operator(Operator::Greater) = &ttt[2] {
-                        locs.push((index, Token::Operator(Operator::NotEqual)));
-                    }
-                    if let Token::Operator(Operator::Equal) = &ttt[2] {
-                        locs.push((index, Token::Operator(Operator::LessEqual)));
-                    }
+            if let Token::Operator(Operator::Less) = &ttt[0]
+                && let Token::Whitespace(_) = &ttt[1]
+            {
+                if let Token::Operator(Operator::Greater) = &ttt[2] {
+                    locs.push((index, Token::Operator(Operator::NotEqual)));
+                }
+                if let Token::Operator(Operator::Equal) = &ttt[2] {
+                    locs.push((index, Token::Operator(Operator::LessEqual)));
                 }
             }
-            if let Token::Operator(Operator::Equal) = &ttt[0] {
-                if let Token::Whitespace(_) = &ttt[1] {
-                    if let Token::Operator(Operator::Greater) = &ttt[2] {
-                        locs.push((index, Token::Operator(Operator::GreaterEqual)));
-                    }
-                    if let Token::Operator(Operator::Less) = &ttt[2] {
-                        locs.push((index, Token::Operator(Operator::LessEqual)));
-                    }
+            if let Token::Operator(Operator::Equal) = &ttt[0]
+                && let Token::Whitespace(_) = &ttt[1]
+            {
+                if let Token::Operator(Operator::Greater) = &ttt[2] {
+                    locs.push((index, Token::Operator(Operator::GreaterEqual)));
+                }
+                if let Token::Operator(Operator::Less) = &ttt[2] {
+                    locs.push((index, Token::Operator(Operator::LessEqual)));
                 }
             }
-            if let Token::Operator(Operator::Greater) = &ttt[0] {
-                if let Token::Whitespace(_) = &ttt[1] {
-                    if let Token::Operator(Operator::Less) = &ttt[2] {
-                        locs.push((index, Token::Operator(Operator::NotEqual)));
-                    }
-                    if let Token::Operator(Operator::Equal) = &ttt[2] {
-                        locs.push((index, Token::Operator(Operator::GreaterEqual)));
-                    }
+            if let Token::Operator(Operator::Greater) = &ttt[0]
+                && let Token::Whitespace(_) = &ttt[1]
+            {
+                if let Token::Operator(Operator::Less) = &ttt[2] {
+                    locs.push((index, Token::Operator(Operator::NotEqual)));
+                }
+                if let Token::Operator(Operator::Equal) = &ttt[2] {
+                    locs.push((index, Token::Operator(Operator::GreaterEqual)));
                 }
             }
-            if let Token::Ident(Ident::Plain(go)) = &ttt[0] {
-                if go == "GO" {
-                    if let Token::Whitespace(_) = ttt[1] {
-                        if let Token::Word(Word::To) = ttt[2] {
-                            locs.push((index, Token::Word(Word::Goto)));
-                        }
-                        if let Token::Ident(Ident::Plain(sub)) = &ttt[2] {
-                            if sub == "SUB" {
-                                locs.push((index, Token::Word(Word::Gosub)));
-                            }
-                        }
-                    }
+            if let Token::Ident(Ident::Plain(go)) = &ttt[0]
+                && go == "GO"
+                && let Token::Whitespace(_) = ttt[1]
+            {
+                if let Token::Word(Word::To) = ttt[2] {
+                    locs.push((index, Token::Word(Word::Goto)));
+                }
+                if let Token::Ident(Ident::Plain(sub)) = &ttt[2]
+                    && sub == "SUB"
+                {
+                    locs.push((index, Token::Word(Word::Gosub)));
                 }
             }
         }
@@ -180,11 +179,11 @@ impl BasicLexer {
                     tokens_iter.next();
                 }
             }
-            if let Token::Operator(Operator::Less) = tt[0] {
-                if let Token::Operator(Operator::Greater) = tt[1] {
-                    locs.push((index, Token::Operator(Operator::NotEqual)));
-                    tokens_iter.next();
-                }
+            if let Token::Operator(Operator::Less) = tt[0]
+                && let Token::Operator(Operator::Greater) = tt[1]
+            {
+                locs.push((index, Token::Operator(Operator::NotEqual)));
+                tokens_iter.next();
             }
         }
         while let Some((index, token)) = locs.pop() {
@@ -208,10 +207,10 @@ impl BasicLexer {
         if let Some(Token::Whitespace(_)) = tokens.last() {
             tokens.pop();
         }
-        if let Some(Token::Unknown(_)) = tokens.last() {
-            if let Some(Token::Unknown(s)) = tokens.pop() {
-                tokens.push(Token::Unknown(s.trim_end().into()));
-            }
+        if let Some(Token::Unknown(_)) = tokens.last()
+            && let Some(Token::Unknown(s)) = tokens.pop()
+        {
+            tokens.push(Token::Unknown(s.trim_end().into()));
         }
     }
 
@@ -220,10 +219,10 @@ impl BasicLexer {
         loop {
             self.chars.pop_front();
             len += 1;
-            if let Some(pk) = self.chars.front() {
-                if is_basic_whitespace(*pk) {
-                    continue;
-                }
+            if let Some(pk) = self.chars.front()
+                && is_basic_whitespace(*pk)
+            {
+                continue;
             }
             return Some(Token::Whitespace(len));
         }

@@ -72,9 +72,7 @@ impl Token {
             ("TO", Token::Word(Word::To)),
         ]
         .iter()
-        .filter_map(|(ts, tk)| {
-            s.find(ts).map(|idx| (idx, ts.len(), tk.clone()))
-        })
+        .filter_map(|(ts, tk)| s.find(ts).map(|idx| (idx, ts.len(), tk.clone())))
         .min_by_key(|(i, _, _)| *i)
         {
             if idx == 0 {
@@ -153,10 +151,10 @@ impl TryFrom<&Token> for LineNumber {
                 Literal::Hex(_) | Literal::Octal(_) | Literal::String(_) => "",
             };
             if s.chars().all(|c| c.is_ascii_digit()) {
-                if let Ok(line) = s.parse::<u16>() {
-                    if line <= LineNumber::max_value() {
-                        return Ok(Some(line));
-                    }
+                if let Ok(line) = s.parse::<u16>()
+                    && line <= LineNumber::MAX
+                {
+                    return Ok(Some(line));
                 }
                 return Err(error!(Overflow; msg));
             }
