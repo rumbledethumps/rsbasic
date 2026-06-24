@@ -1,7 +1,7 @@
 [package]
 edition = "2024"
 name = "rsbasic"
-version = "0.7.1"
+version = "0.8.0"
 authors = ["Rumbledethumps"]
 license = "Apache-2.0 OR MIT"
 repository = "https://github.com/rumbledethumps/rsbasic"
