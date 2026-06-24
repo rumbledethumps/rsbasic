@@ -5,6 +5,7 @@ version = "0.8.0"
 authors = ["Rumbledethumps"]
 license = "Apache-2.0 OR MIT"
 repository = "https://github.com/rumbledethumps/rsbasic"
+documentation = "https://rumbledethumps.github.io/rsbasic"
 description = "Rumbledethumps' Stack BASIC"
 readme = "README.md"
 exclude = ["patch"]
@@ -16,14 +17,15 @@ codegen-units = 1
 opt-level = "s"
 
 [dependencies]
-ansi_term = "0.12"
 chrono = "0.4"
-crc = "1.8"
+crc = "3"
+crossterm = "0.29"
 ctrlc = "3"
-linefeed = "0.6"
-mortal = "0.2"
-rand = "0.8"
-reqwest = {version = "0.11", default-features = false, features = ["blocking", "rustls-tls-native-roots"] }
+nu-ansi-term = "0.50"
+rand = "0.10"
+rustyline = "18"
+rustyline-derive = "0.12"
+ureq = "3"
 
 [lib]
 name = "rsbasic"

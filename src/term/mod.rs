@@ -1,20 +1,22 @@
-extern crate ansi_term;
-extern crate crc;
-extern crate ctrlc;
-extern crate linefeed;
-extern crate mortal;
-extern crate reqwest;
 use crate::mach::{Event, Listing, Runtime};
 use crate::{error, lang::Error};
-use ansi_term::Style;
-use crc::Hasher32;
-use linefeed::{
-    Command, Completer, Completion, Function, Interface, Prompter, ReadResult, Signal, Terminal,
-};
+use crossterm::cursor::MoveTo;
+use crossterm::event::{self, Event as CtEvent, KeyCode, KeyEventKind, KeyModifiers};
+use crossterm::execute;
+use crossterm::terminal::{Clear, ClearType, disable_raw_mode, enable_raw_mode};
+use nu_ansi_term::Style;
+use rustyline::completion::Pair;
+use rustyline::error::ReadlineError;
+use rustyline::history::DefaultHistory;
+use rustyline::line_buffer::LineBuffer;
+use rustyline::{Changeset, Cmd, Editor, KeyEvent, Modifiers};
+use rustyline_derive::{Completer, Helper, Highlighter, Hinter, Validator};
 use std::fs;
 use std::io::{BufRead, BufReader, ErrorKind, Write};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
+
+type Ed = Editor<RsHelper, DefaultHistory>;
 
 pub fn main() {
     if std::env::args().count() > 2 {
@@ -38,15 +40,19 @@ pub fn main() {
     }
 }
 
-fn main_loop(interrupted: Arc<AtomicBool>, filename: String) -> std::io::Result<()> {
-    let terminal = mortal::Terminal::new()?;
+fn main_loop(
+    interrupted: Arc<AtomicBool>,
+    filename: String,
+) -> Result<(), Box<dyn std::error::Error>> {
     let mut runtime = Runtime::default();
-    let command = Interface::new("BASIC")?;
-    let input_full = Interface::new("Input")?;
-    input_full.set_report_signal(Signal::Interrupt, true);
-    let input_caps = Interface::new("INPUT")?;
-    input_caps.set_report_signal(Signal::Interrupt, true);
-    CapsFunction::install(&input_caps);
+    let mut command: Ed = Editor::new()?;
+    let mut input_full: Ed = Editor::new()?;
+    let mut input_caps: Ed = Editor::new()?;
+    CapsFunction::install(&mut input_caps);
+    // Partial output line (text printed since the last newline). Folded into the
+    // next readline prompt so a preceding `PRINT "x";` survives rustyline's
+    // redraw-at-column-0 (e.g. `?"Why";:INPUT Y` shows `Why? `).
+    let mut pending = String::new();
 
     if !filename.is_empty() {
         match load(&filename, true, false) {
@@ -58,10 +64,7 @@ fn main_loop(interrupted: Arc<AtomicBool>, filename: String) -> std::io::Result<
                 runtime.set_listing(listing, true);
             }
             Err(error) => {
-                command.write_fmt(format_args!(
-                    "{}\n",
-                    Style::new().bold().paint(error.to_string())
-                ))?;
+                println!("{}", Style::new().bold().paint(error.to_string()));
                 return Ok(());
             }
         }
@@ -77,109 +80,95 @@ fn main_loop(interrupted: Arc<AtomicBool>, filename: String) -> std::io::Result<
                 if !filename.is_empty() {
                     return Ok(());
                 }
-                let saved_completer = command.completer();
-                command.set_completer(Arc::new(LineCompleter::new(runtime.get_listing())));
-                let string = match command.read_line()? {
-                    ReadResult::Input(string) => string,
-                    ReadResult::Signal(_) | ReadResult::Eof => break,
+                command.set_helper(Some(RsHelper::with_completer(LineCompleter::new(
+                    runtime.get_listing(),
+                ))));
+                // Take pending before readline so it is cleared on every path below
+                // (including the Ctrl-C `continue`).
+                let cmd_prompt = std::mem::take(&mut pending);
+                let string = match command.readline(&cmd_prompt) {
+                    Ok(string) => string,
+                    // Ctrl-C: cancel the line and re-prompt (runtime is still Stopped).
+                    Err(ReadlineError::Interrupted) => {
+                        command.set_helper(None);
+                        continue;
+                    }
+                    // Ctrl-D (EOF) exits the app.
+                    Err(ReadlineError::Eof) => break,
+                    Err(e) => return Err(e.into()),
                 };
-                command.set_completer(saved_completer);
+                command.set_helper(None);
                 if runtime.enter(&string) {
-                    command.add_history_unique(string);
+                    command.add_history_entry(string)?;
                 }
             }
             Event::Input(prompt, caps) => {
-                let input = if caps { &input_caps } else { &input_full };
-                input.set_prompt(&prompt)?;
-                match input.read_line()? {
-                    ReadResult::Input(string) => {
+                let input = if caps { &mut input_caps } else { &mut input_full };
+                // Fold any preceding partial output line into the prompt so rustyline
+                // redraws it at column 0 (e.g. `?"Why";:INPUT Y` -> `Why? `).
+                let full_prompt = format!("{}{}", pending, prompt);
+                let result = input.readline(&full_prompt);
+                pending.clear();
+                match result {
+                    Ok(string) => {
                         if runtime.enter(&string) {
-                            input.add_history_unique(string);
+                            input.add_history_entry(string)?;
                         }
                     }
-                    ReadResult::Signal(Signal::Interrupt) => {
-                        input.set_buffer("")?;
-                        // We need the cancel_read_line because ?"Why";:INPUT Y
-                        // doesn't print the "Why" after you interrupt input.
-                        input.lock_reader().cancel_read_line()?;
+                    Err(ReadlineError::Interrupted) => {
                         runtime.interrupt();
                     }
-                    ReadResult::Signal(_) | ReadResult::Eof => break,
+                    Err(ReadlineError::Eof) => break,
+                    Err(e) => return Err(e.into()),
                 };
             }
             Event::Errors(errors) => {
                 for error in errors.iter() {
-                    command.write_fmt(format_args!(
-                        "{}\n",
-                        Style::new().bold().paint(error.to_string())
-                    ))?;
+                    println!("{}", Style::new().bold().paint(error.to_string()));
                 }
+                pending.clear();
             }
             Event::Running => {}
             Event::Print(s) => {
-                command.write_fmt(format_args!("{}", s))?;
+                print!("{}", s);
+                std::io::stdout().flush().ok();
+                // Track the current partial line (text since the last newline).
+                match s.rfind('\n') {
+                    Some(i) => pending = s[i + 1..].to_string(),
+                    None => pending.push_str(&s),
+                }
             }
             Event::List((s, columns)) => {
-                command.write_fmt(format_args!("{}\n", decorate_list(&s, &columns)))?;
+                println!("{}", decorate_list(&s, &columns));
+                pending.clear();
             }
             Event::Load(s) => match load(&s, false, false) {
                 Ok(listing) => runtime.set_listing(listing, false),
-                Err(error) => command.write_fmt(format_args!(
-                    "{}\n",
-                    Style::new().bold().paint(error.to_string())
-                ))?,
+                Err(error) => {
+                    println!("{}", Style::new().bold().paint(error.to_string()));
+                    pending.clear();
+                }
             },
             Event::Run(s) => match load(&s, false, false) {
                 Ok(listing) => runtime.set_listing(listing, true),
-                Err(error) => command.write_fmt(format_args!(
-                    "{}\n",
-                    Style::new().bold().paint(error.to_string())
-                ))?,
+                Err(error) => {
+                    println!("{}", Style::new().bold().paint(error.to_string()));
+                    pending.clear();
+                }
             },
             Event::Save(s) => match save(&runtime.get_listing(), &s) {
                 Ok(_) => {}
-                Err(error) => command.write_fmt(format_args!(
-                    "{}\n",
-                    Style::new().bold().paint(error.to_string())
-                ))?,
+                Err(error) => {
+                    println!("{}", Style::new().bold().paint(error.to_string()));
+                    pending.clear();
+                }
             },
             Event::Cls => {
-                terminal.clear_screen()?;
+                execute!(std::io::stdout(), Clear(ClearType::All), MoveTo(0, 0))?;
+                pending.clear();
             }
             Event::Inkey => {
-                let mut s: std::rc::Rc<str> = "".into();
-                loop {
-                    match terminal.read_event(Some(std::time::Duration::from_millis(1)))? {
-                        Some(mortal::terminal::Event::Key(key)) => {
-                            use mortal::terminal::Key::*;
-                            s = match key {
-                                Backspace => "\x08".into(),
-                                Enter => "\x0D".into(),
-                                Escape => "\x1B".into(),
-                                Tab => "\x09".into(),
-                                Up => "\x00H".into(),
-                                Down => "\x00P".into(),
-                                Left => "\x00K".into(),
-                                Right => "\x00M".into(),
-                                Delete => "\x00S".into(),
-                                Insert => "\x00R".into(),
-                                Home => "\x00G".into(),
-                                End => "\x00O".into(),
-                                PageUp => "\x00I".into(),
-                                PageDown => "\x00Q".into(),
-                                Char(c) => c.to_string().into(),
-                                Ctrl(c) => match std::char::from_u32(c as u32 - 60) {
-                                    Some(c) => c.to_string().into(),
-                                    None => "".into(),
-                                },
-                                F(_) => "".into(),
-                            };
-                            break;
-                        }
-                        None => break,
-                        _ => continue,
-                    }
-                }
+                let s = read_inkey()?;
                 runtime.enter(&s);
             }
         }
@@ -187,23 +176,74 @@ fn main_loop(interrupted: Arc<AtomicBool>, filename: String) -> std::io::Result<
     Ok(())
 }
 
+fn read_inkey() -> std::io::Result<std::rc::Rc<str>> {
+    enable_raw_mode()?;
+    let result = (|| -> std::io::Result<std::rc::Rc<str>> {
+        loop {
+            if event::poll(std::time::Duration::from_millis(1))? {
+                if let CtEvent::Key(key) = event::read()?
+                    && (key.kind == KeyEventKind::Press || key.kind == KeyEventKind::Repeat)
+                {
+                    return Ok(map_key(key.code, key.modifiers));
+                }
+            } else {
+                return Ok("".into());
+            }
+        }
+    })();
+    disable_raw_mode()?;
+    result
+}
+
+fn map_key(code: KeyCode, mods: KeyModifiers) -> std::rc::Rc<str> {
+    match code {
+        KeyCode::Backspace => "\x08".into(),
+        KeyCode::Enter => "\x0D".into(),
+        KeyCode::Esc => "\x1B".into(),
+        KeyCode::Tab => "\x09".into(),
+        KeyCode::Up => "\x00H".into(),
+        KeyCode::Down => "\x00P".into(),
+        KeyCode::Left => "\x00K".into(),
+        KeyCode::Right => "\x00M".into(),
+        KeyCode::Delete => "\x00S".into(),
+        KeyCode::Insert => "\x00R".into(),
+        KeyCode::Home => "\x00G".into(),
+        KeyCode::End => "\x00O".into(),
+        KeyCode::PageUp => "\x00I".into(),
+        KeyCode::PageDown => "\x00Q".into(),
+        KeyCode::Char(c) if mods.contains(KeyModifiers::CONTROL) => {
+            match std::char::from_u32(c as u32 - 60) {
+                Some(c) => c.to_string().into(),
+                None => "".into(),
+            }
+        }
+        KeyCode::Char(c) => c.to_string().into(),
+        _ => "".into(),
+    }
+}
+
 struct CapsFunction;
 
 impl CapsFunction {
-    fn install<T: Terminal>(i: &Interface<T>) {
-        i.define_function("caps-function", Arc::new(CapsFunction));
-        for ch in 97..=122 {
-            i.bind_sequence(
-                char::from(ch).to_string(),
-                Command::from_str("caps-function"),
+    fn install(ed: &mut Ed) {
+        for ch in b'a'..=b'z' {
+            ed.bind_sequence(
+                KeyEvent::new(ch as char, Modifiers::NONE),
+                Cmd::Insert(1, (ch as char).to_ascii_uppercase().to_string()),
             );
         }
     }
 }
 
-impl<Term: Terminal> Function<Term> for CapsFunction {
-    fn execute(&self, prompter: &mut Prompter<Term>, count: i32, ch: char) -> std::io::Result<()> {
-        prompter.insert(count as usize, ch.to_ascii_uppercase())
+#[derive(Helper, Completer, Hinter, Highlighter, Validator)]
+struct RsHelper {
+    #[rustyline(Completer)]
+    completer: LineCompleter,
+}
+
+impl RsHelper {
+    fn with_completer(completer: LineCompleter) -> RsHelper {
+        RsHelper { completer }
     }
 }
 
@@ -217,24 +257,34 @@ impl LineCompleter {
     }
 }
 
-impl<Term: Terminal> Completer<Term> for LineCompleter {
+impl rustyline::completion::Completer for LineCompleter {
+    type Candidate = Pair;
     fn complete(
         &self,
-        _word: &str,
-        prompter: &Prompter<Term>,
-        _start: usize,
-        _end: usize,
-    ) -> Option<Vec<Completion>> {
-        if let Ok(num) = prompter.buffer().parse::<usize>()
+        line: &str,
+        _pos: usize,
+        _ctx: &rustyline::Context<'_>,
+    ) -> rustyline::Result<(usize, Vec<Pair>)> {
+        if let Ok(num) = line.trim().parse::<usize>()
             && let Some((s, _)) = self.runtime.line(num)
         {
-            let mut comp_list = Vec::new();
-            let mut comp = Completion::simple(s);
-            comp.suffix = linefeed::complete::Suffix::None;
-            comp_list.push(comp);
-            return Some(comp_list);
+            return Ok((
+                0,
+                vec![Pair {
+                    display: s.clone(),
+                    replacement: s,
+                }],
+            ));
         }
-        None
+        Ok((0, vec![]))
+    }
+
+    // The default `update` replaces only `start..cursor`, so with the cursor moved
+    // off the end the typed line number survives. Replace the whole buffer instead
+    // so recall works regardless of cursor position.
+    fn update(&self, line: &mut LineBuffer, _start: usize, elected: &str, cl: &mut Changeset) {
+        let end = line.len();
+        line.replace(0..end, elected, cl);
     }
 }
 
@@ -325,13 +375,10 @@ fn load(filename: &str, allow_patch: bool, ignore_errors: bool) -> Result<Listin
         } else {
             filename.to_string()
         };
-        let mut reader = match reqwest::blocking::get(filename) {
-            Ok(y) => {
-                if y.status().is_success() {
-                    BufReader::new(y)
-                } else {
-                    return Err(error!(FileNotFound; &format!("{}", y.status())));
-                }
+        let mut reader = match ureq::get(filename.as_str()).call() {
+            Ok(resp) => BufReader::new(resp.into_body().into_reader()),
+            Err(ureq::Error::StatusCode(code)) => {
+                return Err(error!(FileNotFound; &format!("{}", code)));
             }
             Err(e) => return Err(error!(InternalError; e.to_string().as_str())),
         };
@@ -399,11 +446,12 @@ fn load2(
                                 )));
                             }
                         };
-                        let mut digest = crc::crc32::Digest::new(crc::crc32::IEEE);
+                        const CRC: crc::Crc<u32> = crc::Crc::<u32>::new(&crc::CRC_32_ISO_HDLC);
+                        let mut digest = CRC.digest();
                         for line in listing.lines() {
-                            digest.write(line.to_string().as_bytes());
+                            digest.update(line.to_string().as_bytes());
                         }
-                        let digest = digest.sum32();
+                        let digest = digest.finalize();
                         if digest != crc {
                             return Err(error!(SyntaxError; &format!(
                                 "Expected CRC {:08X} got {:08X} in line {} of the patch file.",
