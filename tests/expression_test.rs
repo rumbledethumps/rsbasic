@@ -1,5 +1,5 @@
 mod common;
-use basic::mach::Runtime;
+use rsbasic::mach::Runtime;
 use common::*;
 
 #[test]

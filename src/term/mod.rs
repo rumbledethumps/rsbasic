@@ -18,7 +18,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 
 pub fn main() {
     if std::env::args().count() > 2 {
-        println!("Usage: basic [FILENAME]");
+        println!("Usage: rsbasic [FILENAME]");
         return;
     }
     let mut args = std::env::args();

@@ -1,4 +1,4 @@
-use basic::mach::{Event, Runtime};
+use rsbasic::mach::{Event, Runtime};
 
 pub fn exec(runtime: &mut Runtime) -> String {
     exec_n(runtime, 5000)

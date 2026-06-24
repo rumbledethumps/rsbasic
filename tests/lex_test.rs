@@ -1,4 +1,4 @@
-use basic::lang::{lex, token::*, Line};
+use rsbasic::lang::{lex, token::*, Line};
 
 fn token(s: &str) -> Option<Token> {
     let s = format!("?{}", s);

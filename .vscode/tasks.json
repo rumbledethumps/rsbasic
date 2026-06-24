@@ -2,9 +2,9 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "cargo build (basic)",
+            "label": "cargo build (rsbasic)",
             "type": "shell",
-            "command": "cargo build --bin basic",
+            "command": "cargo build --bin rsbasic",
             "group": {
                 "kind": "build",
                 "isDefault": true

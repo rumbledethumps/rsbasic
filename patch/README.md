@@ -5,7 +5,7 @@ preceded by two slashes, to the RS-BASIC executable.
 For example, to obtain Super Star Trek, use:
 
 ```
-$ basic //superstartrek
+$ rsbasic //superstartrek
 Patch mode.
 
 Super Star Trek puts you in command of the starship Enterprise.

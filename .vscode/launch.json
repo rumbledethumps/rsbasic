@@ -5,9 +5,9 @@
             // macOS / Linux — CodeLLDB (vadimcn.vscode-lldb)
             "type": "lldb",
             "request": "launch",
-            "name": "Debug 'basic' (LLDB – macOS/Linux)",
-            "preLaunchTask": "cargo build (basic)",
-            "program": "${workspaceFolder}/target/debug/basic",
+            "name": "Debug 'rsbasic' (LLDB – macOS/Linux)",
+            "preLaunchTask": "cargo build (rsbasic)",
+            "program": "${workspaceFolder}/target/debug/rsbasic",
             "args": [],
             "cwd": "${workspaceFolder}",
             "terminal": "integrated"
@@ -16,9 +16,9 @@
             // Windows (MSVC) — Microsoft C/C++ (ms-vscode.cpptools)
             "type": "cppvsdbg",
             "request": "launch",
-            "name": "Debug 'basic' (Windows MSVC)",
-            "preLaunchTask": "cargo build (basic)",
-            "program": "${workspaceFolder}/target/debug/basic.exe",
+            "name": "Debug 'rsbasic' (Windows MSVC)",
+            "preLaunchTask": "cargo build (rsbasic)",
+            "program": "${workspaceFolder}/target/debug/rsbasic.exe",
             "args": [],
             "cwd": "${workspaceFolder}",
             "console": "integratedTerminal"

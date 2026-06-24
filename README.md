@@ -4,4 +4,3 @@ RS-BASIC
 READY.
 █
 ```
-
